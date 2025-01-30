@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Video Call with Chat</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.3.1/peerjs.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
+        video { width: 45%; border: 2px solid black; margin: 10px; }
+        input, button { padding: 10px; font-size: 16px; margin: 5px; }
+        #chat-container { margin-top: 20px; }
+        #chat-box { width: 80%; height: 150px; border: 1px solid black; padding: 10px; overflow-y: auto; text-align: left; }
+    </style>
+</head>
+<body>
+    <h2>Secure Video Call with Chat</h2>
+    
+    <video id="localVideo" autoplay muted></video>
+    <video id="remoteVideo" autoplay></video>
+    
+    <br>
+    <button onclick="createCallID()">Create Call ID</button>
+    <input type="text" id="callID" placeholder="Enter Call ID">
+    <button onclick="joinCall()">Join Call</button>
+    
+    <div id="chat-container">
+        <h3>Chat</h3>
+        <div id="chat-box"></div>
+        <input type="text" id="chatInput" placeholder="Type a message">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <script>
+        let localStream;
+        let peer = new Peer({
+            config: {
+                'iceServers': [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun1.l.google.com:19302' }
+                ]
+            }
+        });
+
+        let conn; // Data connection for chat
+
+        peer.on('open', id => {
+            console.log("Your ID: " + id);
+            document.getElementById("callID").value = id;
+        });
+
+        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+            .then(stream => {
+                localStream = stream;
+                document.getElementById("localVideo").srcObject = stream;
+            })
+            .catch(error => console.error("Error accessing media devices:", error));
+
+        peer.on('call', call => {
+            call.answer(localStream);
+            call.on('stream', remoteStream => {
+                document.getElementById("remoteVideo").srcObject = remoteStream;
+            });
+        });
+
+        peer.on('connection', connection => {
+            conn = connection;
+            setupChat();
+        });
+
+        function createCallID() {
+            alert("Share this Call ID: " + peer.id);
+        }
+
+        function joinCall() {
+            let callID = document.getElementById("callID").value;
+            if (!callID) {
+                alert("Enter a valid Call ID!");
+                return;
+            }
+            let call = peer.call(callID, localStream);
+            call.on('stream', remoteStream => {
+                document.getElementById("remoteVideo").srcObject = remoteStream;
+            });
+
+            conn = peer.connect(callID); // Establish data connection
+            setupChat();
+        }
+
+        function setupChat() {
+            if (!conn) return;
+            
+            conn.on('data', message => {
+                displayMessage("Peer: " + message);
+            });
+
+            conn.on('open', () => {
+                console.log("Chat connection established!");
+            });
+        }
+
+        function sendMessage() {
+            let message = document.getElementById("chatInput").value;
+            if (message.trim() === "" || !conn) return;
+            
+            conn.send(message);
+            displayMessage("You: " + message);
+            document.getElementById("chatInput").value = ""; // Clear input
+        }
+
+        function displayMessage(text) {
+            let chatBox = document.getElementById("chat-box");
+            let messageElement = document.createElement("p");
+            messageElement.textContent = text;
+            chatBox.appendChild(messageElement);
+            chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll to latest message
+        }
+    </script>
+</body>
+</html>

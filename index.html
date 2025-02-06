@@ -3,118 +3,388 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Secure Video Call with Chat</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.3.1/peerjs.min.js"></script>
+    <title>Flora io</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
-        video { width: 45%; border: 2px solid black; margin: 10px; }
-        input, button { padding: 10px; font-size: 16px; margin: 5px; }
-        #chat-container { margin-top: 20px; }
-        #chat-box { width: 80%; height: 150px; border: 1px solid black; padding: 10px; overflow-y: auto; text-align: left; }
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: lightgreen;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+.block {
+            width: 100px;
+            height: 100px;
+            background-color: brown;
+            position: absolute;
+        }
+        #gameContainer {
+            position: absolute;
+            width: 5000px;
+            height: 5000px; 
+            transform: scale(0.14);
+            transform-origin: top left; 
+            top: 0;
+            left: 0;
+            z-index: 1; 
+            border: 1px solid black; 
+        }
+
+        #circle {
+            width: 50px;
+            height: 50px;
+            background-color: red;
+            border-radius: 50%;
+            position: absolute;
+            z-index: 2;
+        }
+
+        #circle1 {
+            width: 50px;
+            height: 50px;
+            background-color: blue;
+            border-radius: 50%;
+            position: absolute;
+            z-index: 2;
+        }
+
+      
+        #wood, #stone, #points {
+            position: fixed;
+            top: 10px;
+            font-size: 20px;
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 5px;
+            font-family: fantasy, papyrus;
+            z-index: 3; 
+        }
+
+        #wood { left: 10px; }
+        #stone { left: 10px; top: 40px; }
+        #points { left: 10px; top: 70px; }
+
+   
+        #wood2, #stone2, #points2 {
+            position: fixed;
+            top: 10px;
+            font-size: 20px;
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 5px;
+            font-family: fantasy, papyrus;
+            z-index: 3; 
+        }
+
+        #wood2 { 
+          right: 10px; 
+          
+        }
+        #stone2 {
+          right: 10px; top: 40px;
+          }
+        #points2 { 
+          right: 10px; top: 70px; 
+          
+        }
+
+        .tree, .stone, .depositCenter {
+            position: absolute;
+            z-index: 1; 
+        }
+
+        .tree {
+            width: 100px;
+            height: 100px;
+            background-color: green;
+        }
+
+        .stone {
+            width: 50px;
+            height: 50px;
+            background-color: gray;
+        }
+
+        .depositCenter {
+            width: 250px;
+            height: 250px;
+            background-color: silver;
+            text-align: center;
+            line-height: 100px;
+            font-size: 75px;
+            color: gold;
+            font-family: fantasy, papyrus;
+            border: 2px solid black;
+            
+        }
     </style>
 </head>
+
 <body>
-    <h2>Secure Video Call with Chat</h2>
+
     
-    <video id="localVideo" autoplay muted></video>
-    <video id="remoteVideo" autoplay></video>
-    
-    <br>
-    <button onclick="createCallID()">Create Call ID</button>
-    <input type="text" id="callID" placeholder="Enter Call ID">
-    <button onclick="joinCall()">Join Call</button>
-    
-    <div id="chat-container">
-        <h3>Chat</h3>
-        <div id="chat-box"></div>
-        <input type="text" id="chatInput" placeholder="Type a message">
-        <button onclick="sendMessage()">Send</button>
+    <div id="wood">Wood: <span id="wval">0</span></div>
+    <div id="stone">Stone: <span id="sval">0</span></div>
+    <div id="points">Points: <span id="pval">0</span></div>
+
+  
+    <div id="wood2">Wood: <span id="wval2">0</span></div>
+    <div id="stone2">Stone: <span id="sval2">0</span></div>
+    <div id="points2">Points: <span id="pval2">0</span></div>
+
+    <div id="gameContainer">
+        <div id="circle"></div>
+        <div id="circle1"></div>
     </div>
 
     <script>
-        let localStream;
-        let peer = new Peer({
-            config: {
-                'iceServers': [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun1.l.google.com:19302' }
-                ]
+        const gameContainer = document.getElementById('gameContainer');
+        const circle = document.getElementById('circle');
+        const circle1 = document.getElementById('circle1');
+        const woodv = document.getElementById('wval');
+        const stonev = document.getElementById('sval');
+        const pointsv = document.getElementById('pval');
+        const woodv2 = document.getElementById('wval2');
+        const stonev2 = document.getElementById('sval2');
+        const pointsv2 = document.getElementById('pval2');
+
+        let x1 = 2500, y1 = 2500; 
+        let x2 = 2500, y2 = 2500; 
+
+        let wood = 0, stone = 0, points = 0;
+        let wood2 = 0, stone2 = 0, points2 = 0;
+
+        const treeSize = 100, stoneSize = 50;
+        const woodPerTree = 8, stonePerStone = 6;
+
+        let canCollectWood = true, canCollectStone = true;
+        let collectionDelay = 1000;
+
+        circle.style.left = x1 + 'px';
+        circle.style.top = y1 + 'px';
+
+        const trees = [], stones = [], depositCenters = [];
+
+   
+        const keys = {
+            w: false, a: false, s: false, d: false, 
+            ArrowUp: false, ArrowLeft: false, ArrowDown: false, ArrowRight: false 
+        };
+
+        document.addEventListener('keydown', event => { 
+            if (event.key in keys) keys[event.key] = true; 
+        });
+        document.addEventListener('keyup', event => { 
+            if (event.key in keys) keys[event.key] = false; 
+        });
+
+
+        function spawnRandomObject(className, size, collectionArray, resourceType, resourceAmount) {
+            const randX = Math.random() * (5000 - size);
+            const randY = Math.random() * (5000 - size);
+
+            const obj = document.createElement('div');
+            obj.classList.add(className);
+            obj.style.left = randX + 'px';
+            obj.style.top = randY + 'px';
+            obj.dataset.resourceAmount = resourceAmount;
+            gameContainer.appendChild(obj);
+            collectionArray.push(obj);
+        }
+
+        
+       
+        function spawnDepositCenter() {
+            const depositCenter = document.createElement('div');
+            depositCenter.classList.add('depositCenter');
+            depositCenter.style.left = '2500px';
+            depositCenter.style.top = '100px';
+            depositCenter.innerText = 'Deposit';
+            gameContainer.appendChild(depositCenter);
+            depositCenters.push(depositCenter);
+        }
+
+        
+        for (let i = 0; i < 100; i++) {
+            spawnRandomObject('tree', treeSize, trees, 'wood', woodPerTree);
+            spawnRandomObject('stone', stoneSize, stones, 'stone', stonePerStone);
+        }
+        spawnDepositCenter();
+
+        
+        function moveCircle() {
+            const step = 10;
+            let newX = x1, newY = y1;
+
+            if (keys.a) newX -= step;
+            if (keys.d) newX += step;
+            if (keys.w) newY -= step;
+            if (keys.s) newY += step;
+
+            x1 = Math.max(0, Math.min(newX, 4950));
+            y1 = Math.max(0, Math.min(newY, 4950));
+
+            circle.style.left = x1 + 'px';
+            circle.style.top = y1 + 'px';
+
+            checkCollisionWithObjects(trees, treeSize, 'wood');
+            checkCollisionWithObjects(stones, stoneSize, 'stone');
+            checkCollisionWithDepositCenter();
+        }
+
+        
+        function moveCircle1() {
+            const step = 10;
+            let newX = x2, newY = y2;
+
+            if (keys.ArrowLeft) newX -= step;
+            if (keys.ArrowRight) newX += step;
+            if (keys.ArrowUp) newY -= step;
+            if (keys.ArrowDown) newY += step;
+
+            x2 = Math.max(0, Math.min(newX, 4950));
+            y2 = Math.max(0, Math.min(newY, 4950));
+
+            circle1.style.left = x2 + 'px';
+            circle1.style.top = y2 + 'px';
+
+            checkCollisionWithObjects(trees, treeSize, 'wood');
+            checkCollisionWithObjects(stones, stoneSize, 'stone');
+            checkCollisionWithDepositCenter();
+        }
+
+       
+        function checkCollisionWithObjects(objects, size, resourceType) {
+            objects.forEach((object, index) => {
+                const objectRect = object.getBoundingClientRect();
+                const circleRect = circle.getBoundingClientRect();
+                const circleRect1 = circle1.getBoundingClientRect();
+                
+                if (
+                    circleRect.left < objectRect.right &&
+                    circleRect.right > objectRect.left &&
+                    circleRect.top < objectRect.bottom &&
+                    circleRect.bottom > objectRect.top
+                ) {
+                    const resourceAmount = parseInt(object.dataset.resourceAmount);
+                    if (resourceType === 'wood' && canCollectWood) collectWood(object, resourceAmount);
+                    if (resourceType === 'stone' && canCollectStone) collectStone(object, resourceAmount);
+                    if (parseInt(object.dataset.resourceAmount) <= 0) {
+                        objects.splice(index, 1);
+                        object.remove();
+                        spawnRandomObject(resourceType === 'wood' ? 'tree' : 'stone', resourceType === 'wood' ? treeSize : stoneSize, objects, resourceType, resourceType === 'wood' ? woodPerTree : stonePerStone);
+                    }
+                }
+
+                if (
+                    circleRect1.left < objectRect.right &&
+                    circleRect1.right > objectRect.left &&
+                    circleRect1.top < objectRect.bottom &&
+                    circleRect1.bottom > objectRect.top
+                ) {
+                    const resourceAmount = parseInt(object.dataset.resourceAmount);
+                    if (resourceType === 'wood' && canCollectWood) collectWood2(object, resourceAmount);
+                    if (resourceType === 'stone' && canCollectStone) collectStone2(object, resourceAmount);
+                    if (parseInt(object.dataset.resourceAmount) <= 0) {
+                        objects.splice(index, 1);
+                        object.remove();
+                        spawnRandomObject(resourceType === 'wood' ? 'tree' : 'stone', resourceType === 'wood' ? treeSize : stoneSize, objects, resourceType, resourceType === 'wood' ? woodPerTree : stonePerStone);
+                    }
+                }
+            });
+        }
+
+   
+        function collectWood(object, amount) {
+            if (amount > 0 && canCollectWood) {
+                canCollectWood = false;
+                wood += 2;
+                woodv.innerText = wood;
+                object.dataset.resourceAmount = amount - 2;
+                setTimeout(() => canCollectWood = true, collectionDelay);
             }
-        });
-
-        let conn; // Data connection for chat
-
-        peer.on('open', id => {
-            console.log("Your ID: " + id);
-            document.getElementById("callID").value = id;
-        });
-
-        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-            .then(stream => {
-                localStream = stream;
-                document.getElementById("localVideo").srcObject = stream;
-            })
-            .catch(error => console.error("Error accessing media devices:", error));
-
-        peer.on('call', call => {
-            call.answer(localStream);
-            call.on('stream', remoteStream => {
-                document.getElementById("remoteVideo").srcObject = remoteStream;
-            });
-        });
-
-        peer.on('connection', connection => {
-            conn = connection;
-            setupChat();
-        });
-
-        function createCallID() {
-            alert("Share this Call ID: " + peer.id);
         }
 
-        function joinCall() {
-            let callID = document.getElementById("callID").value;
-            if (!callID) {
-                alert("Enter a valid Call ID!");
-                return;
+        function collectStone(object, amount) {
+            if (amount > 0 && canCollectStone) {
+                canCollectStone = false;
+                stone += 2;
+                stonev.innerText = stone;
+                object.dataset.resourceAmount = amount - 2;
+                setTimeout(() => canCollectStone = true, collectionDelay);
             }
-            let call = peer.call(callID, localStream);
-            call.on('stream', remoteStream => {
-                document.getElementById("remoteVideo").srcObject = remoteStream;
+        }
+
+        
+        function collectWood2(object, amount) {
+            if (amount > 0 && canCollectWood) {
+                canCollectWood = false;
+                wood2 += 2;
+                woodv2.innerText = wood2;
+                object.dataset.resourceAmount = amount - 2;
+                setTimeout(() => canCollectWood = true, collectionDelay);
+            }
+        }
+
+        function collectStone2(object, amount) {
+            if (amount > 0 && canCollectStone) {
+                canCollectStone = false;
+                stone2 += 2;
+                stonev2.innerText = stone2;
+                object.dataset.resourceAmount = amount - 2;
+                setTimeout(() => canCollectStone = true, collectionDelay);
+            }
+        }
+
+        
+        function checkCollisionWithDepositCenter() {
+            depositCenters.forEach(depositCenter => {
+                const depositRect = depositCenter.getBoundingClientRect();
+                const circleRect = circle.getBoundingClientRect();
+                const circleRect1 = circle1.getBoundingClientRect();
+                
+                if (
+                    circleRect.left < depositRect.right &&
+                    circleRect.right > depositRect.left &&
+                    circleRect.top < depositRect.bottom &&
+                    circleRect.bottom > depositRect.top
+                ) {
+                    depositResources();
+                }
+
+                if (
+                    circleRect1.left < depositRect.right &&
+                    circleRect1.right > depositRect.left &&
+                    circleRect1.top < depositRect.bottom &&
+                    circleRect1.bottom > depositRect.top
+                ) {
+                    depositResources2();
+                }
             });
-
-            conn = peer.connect(callID); // Establish data connection
-            setupChat();
         }
 
-        function setupChat() {
-            if (!conn) return;
-            
-            conn.on('data', message => {
-                displayMessage("Peer: " + message);
-            });
-
-            conn.on('open', () => {
-                console.log("Chat connection established!");
-            });
+      
+        function depositResources() {
+            points += wood + stone * 2;
+            pointsv.innerText = points;
+            wood = stone = 0;
+            woodv.innerText = stonev.innerText = 0;
         }
 
-        function sendMessage() {
-            let message = document.getElementById("chatInput").value;
-            if (message.trim() === "" || !conn) return;
-            
-            conn.send(message);
-            displayMessage("You: " + message);
-            document.getElementById("chatInput").value = ""; // Clear input
+        
+        function depositResources2() {
+            points2 += wood2 + stone2 * 2;
+            pointsv2.innerText = points2;
+            wood2 = stone2 = 0;
+            woodv2.innerText = stonev2.innerText = 0;
         }
 
-        function displayMessage(text) {
-            let chatBox = document.getElementById("chat-box");
-            let messageElement = document.createElement("p");
-            messageElement.textContent = text;
-            chatBox.appendChild(messageElement);
-            chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll to latest message
-        }
+        
+        setInterval(() => {
+            moveCircle();
+            moveCircle1();
+        }, 20);
     </script>
+
 </body>
 </html>

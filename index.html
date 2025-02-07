@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Flora io</title>
+
     <style>
         body {
             margin: 0;
@@ -20,6 +21,17 @@
             background-color: brown;
             position: absolute;
         }
+            #health1, #health2 {
+        position: fixed;
+        top: 100px;
+        font-size: 20px;
+        background-color: rgba(255, 255, 255, 0.7);
+        padding: 5px;
+        font-family: fantasy, papyrus;
+        z-index: 3; 
+    }
+    #health1 { left: 10px; }
+    #health2 { right: 10px; }
         #gameContainer {
             position: absolute;
             width: 5000px;
@@ -104,6 +116,14 @@
             height: 50px;
             background-color: gray;
         }
+                .enemy {
+            width: 50px;
+            height: 50px;
+            background-color: purple;
+            border-radius: 50%;
+            position: absolute;
+            z-index: 2;
+        }
 
         .depositCenter {
             width: 250px;
@@ -121,6 +141,8 @@
 </head>
 
 <body>
+      <div id="health1">Health: <span id="hval1">100</span></div>
+<div id="health2">Health: <span id="hval2">100</span></div>
 
     
     <div id="wood">Wood: <span id="wval">0</span></div>
@@ -177,6 +199,7 @@
         document.addEventListener('keyup', event => { 
             if (event.key in keys) keys[event.key] = false; 
         });
+
 
 
         function spawnRandomObject(className, size, collectionArray, resourceType, resourceAmount) {
@@ -365,25 +388,259 @@
 
       
         function depositResources() {
-            points += wood + stone * 2;
-            pointsv.innerText = points;
-            wood = stone = 0;
-            woodv.innerText = stonev.innerText = 0;
-        }
+    points += wood + stone * 2;
+    pointsv.innerText = points;
+    
+    // Increase health for Player 1 based on the points
+    health1 += (wood + stone * 2) / 10; // Adjust the divisor to control how much health is gained
+    health1 = Math.min(health1, 100); // Make sure health doesn't exceed 100
+    healthv1.innerText = Math.round(health1); // Update the health display
+    
+    // Reset resources
+    wood = stone = 0;
+    woodv.innerText = stonev.innerText = 0;
+}
 
-        
-        function depositResources2() {
-            points2 += wood2 + stone2 * 2;
-            pointsv2.innerText = points2;
-            wood2 = stone2 = 0;
-            woodv2.innerText = stonev2.innerText = 0;
-        }
+function depositResources2() {
+    points2 += wood2 + stone2 * 2;
+    pointsv2.innerText = points2;
+
+    // Increase health for Player 2 based on the points
+    health2 += (wood2 + stone2 * 2) / 10; // Adjust the divisor to control how much health is gained
+    health2 = Math.min(health2, 100); // Make sure health doesn't exceed 100
+    healthv2.innerText = Math.round(health2); // Update the health display
+    
+    // Reset resources
+    wood2 = stone2 = 0;
+    woodv2.innerText = stonev2.innerText = 0;
+}
+
 
         
         setInterval(() => {
             moveCircle();
             moveCircle1();
         }, 20);
+        const healthv1 = document.getElementById('hval1');
+const healthv2 = document.getElementById('hval2');
+let health1 = 100, health2 = 100;
+
+  // Player 2 attack
+// Player 2 attack
+
+
+// Make sure enemies keep moving or doing their behavior
+
+
+document.addEventListener('keydown', (event) => {
+    if (event.key === " ") {
+        enemies.forEach(enemy => {
+            const enemyRect = enemy.getBoundingClientRect();
+            const circleRect = circle.getBoundingClientRect();
+
+            if (
+                circleRect.left < enemyRect.right &&
+                circleRect.right > enemyRect.left &&
+                circleRect.top < enemyRect.bottom &&
+                circleRect.bottom > enemyRect.top
+            ) {
+                let enemyHealth = parseInt(enemy.dataset.health);
+                enemyHealth -= 5;
+                enemy.dataset.health = enemyHealth;
+                
+                // Update health bar width
+                let healthBar = enemy.querySelector('.healthBar');
+                healthBar.style.width = (enemyHealth / 20) * 50 + 'px';
+
+                if (enemyHealth <= 0) {
+                    enemy.remove();
+                    player1Rect.Points += 10
+                     player2Rect.Points += 10
+                    enemies.splice(enemies.indexOf(enemy), 1);
+                }
+            }
+        });
+    }
+});
+
+
+
+const enemies = []; // Store enemy objects
+
+function spawnEnemy() {
+    const enemy = document.createElement('div');
+    enemy.classList.add('enemy');
+    enemy.style.left = Math.random() * 5000 + 'px';
+    enemy.style.top = Math.random() * 5000 + 'px';
+
+    // Create health bar for enemy
+    const healthBar = document.createElement('div');
+    healthBar.classList.add('healthBar');
+    healthBar.style.position = "absolute";
+    healthBar.style.width = "50px";
+    healthBar.style.height = "5px";
+    healthBar.style.backgroundColor = "red";
+    healthBar.style.top = "-10px";
+    enemy.appendChild(healthBar);
+
+    enemy.dataset.health = 20; 
+    gameContainer.appendChild(enemy);
+    enemies.push(enemy);
+}
+
+// Function to move enemies toward Player 1
+function moveEnemies() {
+    enemies.forEach(enemy => {
+        let enemyRect = enemy.getBoundingClientRect();
+        let player1Rect = circle.getBoundingClientRect();
+        let player2Rect = circle1.getBoundingClientRect();
+
+        let dx1 = player1Rect.left - enemyRect.left;
+        let dy1 = player1Rect.top - enemyRect.top;
+        let distance1 = Math.sqrt(dx1 * dx1 + dy1 * dy1);
+
+        let dx2 = player2Rect.left - enemyRect.left;
+        let dy2 = player2Rect.top - enemyRect.top;
+        let distance2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+
+        if (distance1 < distance2) {
+            enemy.style.left = parseInt(enemy.style.left) + (dx1 / distance1) * 2 + 'px';
+            enemy.style.top = parseInt(enemy.style.top) + (dy1 / distance1) * 2 + 'px';
+        } else {
+            enemy.style.left = parseInt(enemy.style.left) + (dx2 / distance2) * 2 + 'px';
+            enemy.style.top = parseInt(enemy.style.top) + (dy2 / distance2) * 2 + 'px';
+        }
+
+        if (
+            player1Rect.left < enemyRect.right &&
+            player1Rect.right > enemyRect.left &&
+            player1Rect.top < enemyRect.bottom &&
+            player1Rect.bottom > enemyRect.top
+        ) {
+            attackPlayer(1);
+        }
+
+        if (
+            player2Rect.left < enemyRect.right &&
+            player2Rect.right > enemyRect.left &&
+            player2Rect.top < enemyRect.bottom &&
+            player2Rect.bottom > enemyRect.top
+        ) {
+            attackPlayer(2);
+        }
+    });
+}
+
+
+function attackPlayer(player) {
+    if (player === 1) {
+        health1 -= 5;
+        healthv1.innerText = health1;
+        if (health1 <= 0) {
+           respawnPlayer(1)
+        }
+    } else if (player === 2) {
+        health2 -= 5;
+        healthv2.innerText = health2;
+        if (health2 <= 0) {
+            respawnPlayer(2)
+        }
+    }
+}
+
+ function attack() {
+            document.addEventListener('keydown', (event) => {
+                if (event.key === " ") {
+                    enemies.forEach(enemy => {
+                        const enemyRect = enemy.getBoundingClientRect();
+                        const circleRect = circle.getBoundingClientRect();
+
+                        if (
+                            circleRect.left < enemyRect.right &&
+                            circleRect.right > enemyRect.left &&
+                            circleRect.top < enemyRect.bottom &&
+                            circleRect.bottom > enemyRect.top
+                        ) {
+                            let enemyHealth = parseInt(enemy.dataset.health);
+                            enemyHealth -= 5;
+
+                            if (enemyHealth <= 0) {
+                                enemy.remove();
+                            } else {
+                                enemy.dataset.health = enemyHealth;
+                                enemy.querySelector('.healthBar').style.width = enemyHealth / 20 * 50 + 'px';
+                            }
+                        }
+                    });
+                }
+            });
+        }
+setInterval(moveEnemies, 100); // Move enemies every 100ms
+for (let i = 0; i < 10; i++) spawnEnemy();
+
+        setInterval(moveCircle1, 20);
+        setInterval(moveCircle, 20);
+        for (let i = 0; i < 5; i++) spawnEnemy();
+        attack();
+
+for (let i = 0; i < 10; i++) spawnEnemy();
+
+function checkDeath() {
+    if (health1 <= 0) respawnPlayer(1);
+    if (health2 <= 0) respawnPlayer(2);
+}
+
+function respawnPlayer(player) {
+    if (player === 1) {
+        health1 = 100;  // Reset health
+        healthv1.innerText = health1;
+        // Reset position or logic for respawn
+        x1 = 2500; y1 = 2500;
+        circle.style.left = x1 + 'px';
+        circle.style.top = y1 + 'px';
+    }
+    if (player === 2) {
+        health2 = 100;  // Reset health
+        healthv2.innerText = health2;
+        // Reset position or logic for respawn
+        x2 = 2500; y2 = 2500;
+        circle1.style.left = x2 + 'px';
+        circle1.style.top = y2 + 'px';
+    }
+}
+
+
+function gameLoop() {
+  update(); // Update the game state
+  render(); // Draw everything to the screen
+  
+  requestAnimationFrame(gameLoop); // Call the next frame
+}
+
+function update() {
+  // Game logic (e.g., player movement, enemy behavior)
+  
+  // Health regeneration example:
+  if (player.health < player.maxHealth) {
+    player.health += healthRegenRate;
+    if (player.health > player.maxHealth) {
+      player.health = player.maxHealth;
+    }
+  }
+}
+
+function render() {
+  // Clear the screen and redraw everything
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  
+  // Draw player, enemies, and other game elements
+  drawPlayer();
+  drawEnemies();
+  // ... other render code
+}
+
+gameLoop(); // Start the game loop
+
     </script>
 
 </body>
